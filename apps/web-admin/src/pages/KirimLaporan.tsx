@@ -114,7 +114,16 @@ export default function KirimLaporan() {
           <Button
             variant="light"
             leftSection={<IconFileSpreadsheet size={18} />}
-            onClick={() => window.open('/api/imports/template/download', '_blank')}
+            onClick={async () => {
+              try {
+                const resp = await api.post('/imports/template/create-drive');
+                const url = resp.data?.url || resp.data?.fallbackDownloadUrl;
+                if (url) window.open(url, '_blank');
+                else notifications.show({ title: 'Gagal', message: resp.data?.message || 'Tidak dapat membuat template', color: 'red' });
+              } catch (err: any) {
+                notifications.show({ title: 'Gagal', message: err?.response?.data?.message || err.message || 'Terjadi kesalahan', color: 'red' });
+              }
+            }}
           >
             Download Template
           </Button>
