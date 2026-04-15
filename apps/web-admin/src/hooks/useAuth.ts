@@ -30,10 +30,19 @@ export const useAuth = create<AuthState>()(
       login: async (username, password) => {
         const response = await api.post('/auth/login', { username, password });
         const { access_token, user } = response.data;
+        // persist token also under simple key for compatibility with checkAuth
+        try {
+          localStorage.setItem('token', access_token);
+        } catch (e) {
+          // ignore
+        }
         set({ user, token: access_token, isAuthenticated: true, isLoading: false });
         api.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
       },
       logout: () => {
+        try {
+          localStorage.removeItem('token');
+        } catch (e) {}
         set({ user: null, token: null, isAuthenticated: false, isLoading: false });
         delete api.defaults.headers.common['Authorization'];
       },

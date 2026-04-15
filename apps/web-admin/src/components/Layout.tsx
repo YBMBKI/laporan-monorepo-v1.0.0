@@ -1,6 +1,6 @@
 import { AppShell, Group, Text, Burger, rem, NavLink, Box } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { IconDashboard, IconUpload, IconHistory, IconChartBar, IconFileAnalytics, IconUsers, IconMoneyDollar, IconGift, IconSettings, IconUserCircle, IconBuilding, IconPackage } from '@tabler/icons-react';
+import { IconDashboard, IconUpload, IconHistory, IconChartBar, IconFileAnalytics, IconUsers, IconCurrencyDollar, IconGift, IconSettings, IconUserCircle, IconBuilding, IconPackage } from '@tabler/icons-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
@@ -17,7 +17,7 @@ const navItems = [
   { label: 'Laporan Penjualan', icon: IconChartBar, path: '/laporan-penjualan' },
   { label: 'Laporan Formal', icon: IconFileAnalytics, path: '/laporan-formal' },
   { label: 'Performa Anggota', icon: IconUsers, path: '/performa-anggota' },
-  { label: 'Pendapatan', icon: IconMoneyDollar, path: '/pendapatan' },
+  { label: 'Pendapatan', icon: IconCurrencyDollar, path: '/pendapatan' },
   { label: 'THR', icon: IconGift, path: '/thr' },
   { label: 'Master Data', icon: IconPackage, path: '/master-data' },
   { label: 'Pengaturan', icon: IconSettings, path: '/settings' },

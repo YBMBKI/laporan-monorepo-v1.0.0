@@ -11,6 +11,7 @@
     "test": "jest",
     "prisma:generate": "prisma generate",
     "seed": "ts-node prisma/seed.ts",
+    "start:fast": "ts-node --transpile-only src/main.ts",
     "prisma:migrate": "prisma migrate dev",
     "prisma:push": "prisma db push",
     "prisma:studio": "prisma studio"

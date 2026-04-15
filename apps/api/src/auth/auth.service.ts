@@ -12,11 +12,26 @@ export class AuthService {
   ) {}
 
   async validateUser(username: string, password: string): Promise<any> {
-    const user = await this.usersService.findByUsername(username);
-    if (user && await bcrypt.compare(password, user.passwordHash)) {
+    // Try exact username first
+    let user = await this.usersService.findByUsername(username);
+
+    // If exact user exists and password matches, return it
+    if (user && (await bcrypt.compare(password, user.passwordHash))) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { passwordHash, ...result } = user;
       return result;
     }
+
+    // If username without domain failed, try fallback with '@1000'
+    if (!username.includes('@')) {
+      const fallback = await this.usersService.findByUsername(`${username}@1000`);
+      if (fallback && (await bcrypt.compare(password, fallback.passwordHash))) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { passwordHash, ...result } = fallback;
+        return result;
+      }
+    }
+
     return null;
   }
 

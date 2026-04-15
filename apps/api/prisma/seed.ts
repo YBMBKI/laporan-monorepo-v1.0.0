@@ -5,34 +5,37 @@ const prisma = new PrismaClient();
 
 async function main() {
   console.log('Seeding database...');
+  // hashes for default passwords
+  const adminHash = await bcrypt.hash('superadmin', 10);
+  const masterHash = await bcrypt.hash('master123', 10);
+  const memberHash = await bcrypt.hash('member123', 10);
 
-  const passwordHash = await bcrypt.hash('admin123', 10);
-
+  // master / admin accounts per request
   const adminUser = await prisma.user.upsert({
-    where: { username: 'admin' },
-    update: {},
+    where: { username: 'admin@1000' },
+    update: { passwordHash: adminHash },
     create: {
       fullName: 'Super Admin',
-      email: 'admin@ybmbki.org',
-      username: 'admin',
-      passwordHash,
+      email: 'admin+1000@ybmbki.org',
+      username: 'admin@1000',
+      passwordHash: adminHash,
       role: 'super_admin',
     },
   });
   console.log('Created admin user:', adminUser.username);
 
-  const koordinatorUser = await prisma.user.upsert({
-    where: { username: 'koordinator' },
-    update: {},
+  const masterUser = await prisma.user.upsert({
+    where: { username: 'master#1000' },
+    update: { passwordHash: masterHash },
     create: {
-      fullName: 'Ahmad Santoso',
-      email: 'koordinator@ybmbki.org',
-      username: 'koordinator',
-      passwordHash,
-      role: 'koordinator',
+      fullName: 'Master Account',
+      email: 'master+1000@ybmbki.org',
+      username: 'master#1000',
+      passwordHash: masterHash,
+      role: 'super_admin',
     },
   });
-  console.log('Created koordinator user:', koordinatorUser.username);
+  console.log('Created master user:', masterUser.username);
 
   await prisma.memberPosition.createMany({
     data: [
@@ -53,7 +56,7 @@ async function main() {
 
   await prisma.branch.createMany({
     data: [
-      { kodeCabang: 'C001', wilayahKelompok: 'Pucang', wilayahKabupaten: 'Bawang', wilayahProvinsi: 'Jawa Tengah', alamatCabang: 'Jl. Kyai Pança, Pucang, Bawang, Banjarnégara' },
+      { kodeCabang: 'C001', wilayahKelompok: 'Pucang', wilayahKabupaten: 'Bawang', wilayahProvinsi: 'Jawa Tengah', alamatCabang: 'Jl. Kyai Panca, Pucang, Bawang, Banjarnégara' },
       { kodeCabang: 'C002', wilayahKelompok: 'Kaliori', wilayahKabupaten: 'Banyumas', wilayahProvinsi: 'Jawa Tengah', alamatCabang: 'Kaliori, Banyumas' },
       { kodeCabang: 'C003', wilayahKelompok: 'Purbalingga', wilayahKabupaten: 'Purbalingga', wilayahProvinsi: 'Jawa Tengah', alamatCabang: 'Purbalingga' },
     ],
@@ -120,20 +123,48 @@ async function main() {
     skipDuplicates: true,
   });
 
-  const members = await prisma.member.findMany();
-  if (members.length === 0) {
-    const coordinatorPosition = await prisma.memberPosition.findFirst({ where: { code: 'koordinator' } });
-    const regularPosition = await prisma.memberPosition.findFirst({ where: { code: 'anggota' } });
-    const branch = await prisma.branch.findFirst();
+  // Create sample members and linked user accounts
+  const coordinatorPosition = await prisma.memberPosition.findFirst({ where: { code: 'koordinator' } });
+  const regularPosition = await prisma.memberPosition.findFirst({ where: { code: 'anggota' } });
+  const branch = await prisma.branch.findFirst();
 
-    if (coordinatorPosition && regularPosition && branch) {
-      await prisma.member.createMany({
-        data: [
-          { kodeAnggota: 'M001', namaAnggota: 'Budi Susanto', branchId: branch.id, positionId: coordinatorPosition.id, noHp: '081234567890', alamat: 'Bawang' },
-          { kodeAnggota: 'M002', namaAnggota: 'Siti Rahayu', branchId: branch.id, positionId: regularPosition.id, noHp: '081234567891', alamat: 'Banjarnégara' },
-          { kodeAnggota: 'M003', namaAnggota: 'Joko Pramono', branchId: branch.id, positionId: regularPosition.id, noHp: '081234567892', alamat: 'Pucang' },
-        ],
-        skipDuplicates: true,
+  if (branch && coordinatorPosition && regularPosition) {
+    const membersData = [
+      { kodeAnggota: 'M001', namaAnggota: 'Budi Susanto', positionId: coordinatorPosition.id, noHp: '081234567890', alamat: 'Bawang' },
+      { kodeAnggota: 'M002', namaAnggota: 'Siti Rahayu', positionId: regularPosition.id, noHp: '081234567891', alamat: 'Banjarnégara' },
+      { kodeAnggota: 'M003', namaAnggota: 'Joko Pramono', positionId: regularPosition.id, noHp: '081234567892', alamat: 'Pucang' },
+      { kodeAnggota: 'M004', namaAnggota: 'Slamet Riyadi', positionId: regularPosition.id, noHp: '081234567893', alamat: 'Kaliori' },
+      { kodeAnggota: 'M005', namaAnggota: 'Dewi Lestari', positionId: regularPosition.id, noHp: '081234567894', alamat: 'Purbalingga' },
+      { kodeAnggota: 'M006', namaAnggota: 'Rina Wulandari', positionId: coordinatorPosition.id, noHp: '081234567895', alamat: 'Banyumas' },
+    ];
+
+    for (const m of membersData) {
+      const member = await prisma.member.upsert({
+        where: { kodeAnggota: m.kodeAnggota },
+        update: {},
+        create: {
+          kodeAnggota: m.kodeAnggota,
+          namaAnggota: m.namaAnggota,
+          branchId: branch.id,
+          positionId: m.positionId,
+          noHp: m.noHp,
+          alamat: m.alamat,
+        },
+      });
+
+      // create user for member
+      const username = `${m.namaAnggota.split(' ')[0].toLowerCase()}@1000`;
+      await prisma.user.upsert({
+        where: { username },
+        update: {},
+        create: {
+          fullName: m.namaAnggota,
+          email: `${m.namaAnggota.split(' ')[0].toLowerCase()}+1000@ybmbki.org`,
+          username,
+          passwordHash: memberHash,
+          role: 'anggota',
+          memberId: member.id,
+        },
       });
     }
   }

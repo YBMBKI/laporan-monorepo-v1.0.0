@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import { MantineProvider, createTheme } from '@mantine/core';
 import { Notifications } from '@mantine/notifications';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
+import { useAuth } from './hooks/useAuth';
 import '@mantine/core/styles.css';
 import '@mantine/dates/styles.css';
 import '@mantine/notifications/styles.css';
@@ -39,10 +40,21 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <QueryClientProvider client={queryClient}>
       <MantineProvider theme={theme}>
         <Notifications position="top-right" />
-        <BrowserRouter>
-          <App />
+        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          {/* ensure auth check runs on app start */}
+          <AuthInitializer>
+            <App />
+          </AuthInitializer>
         </BrowserRouter>
       </MantineProvider>
     </QueryClientProvider>
   </React.StrictMode>
 );
+
+function AuthInitializer({ children }: { children: React.ReactNode }) {
+  const checkAuth = useAuth((s) => s.checkAuth);
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+  return <>{children}</>;
+}
