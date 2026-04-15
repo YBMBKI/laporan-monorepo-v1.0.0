@@ -1,0 +1,13 @@
+# Install dependencies
+cd apps/api && npm install
+cd apps/web-admin && npm install
+
+# Setup database
+cd apps/api && npm run prisma:migrate
+npm run seed
+
+# Jalankan backend
+npm run start:dev
+
+# Jalankan frontend (terminal lain)
+cd apps/web-admin && npm run dev

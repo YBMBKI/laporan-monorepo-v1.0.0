@@ -1,0 +1,39 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: #F5F6F8;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.mantine-Table-thead {
+  background-color: #F5F6F8;
+}
+
+.mantine-Table-tr:hover {
+  background-color: #FAFAFA;
+}
+
+.paper-stats {
+  transition: box-shadow 0.2s ease;
+}
+
+.paper-stats:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.nav-link-active {
+  background-color: #ffe9ec;
+  color: #d90b23;
+}
+
+.nav-link-active .mantine-NavLink-icon {
+  color: #d90b23;
+}

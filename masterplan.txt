@@ -1,0 +1,1353 @@
+Siap. Aku buatkan **TXT MASTERPLAN lengkap** untuk **Management Laporan YBMBKI** berdasarkan konsepmu dan mengacu pada struktur tabel awal yang kamu kirim, lalu aku rapikan jadi bentuk yang lebih aman, scalable, dan enak dipakai untuk user awam.
+
+---
+
+# TXT MASTERPLAN
+
+# MANAGEMENT LAPORAN YBMBKI
+
+**Fullstack Monorepo — Node.js + React + Mantine**
+
+## 1. TUJUAN SISTEM
+
+Sistem ini dibuat untuk menjadi pusat pengelolaan laporan kegiatan, penjualan, performa anggota, perhitungan insentif, gaji, dan THR dalam satu aplikasi terintegrasi.
+
+Fokus utamanya:
+
+* memudahkan koordinator mengirim laporan harian / mingguan lewat file XLSX
+* data importer masuk rapi ke database
+* admin bisa melihat laporan penjualan dan performa anggota
+* sistem bisa menghasilkan laporan formal yayasan per bulan
+* sistem menghitung pendapatan anggota berdasarkan role/jabatan kegiatan
+* sistem menghitung THR berdasarkan point order
+* tampilannya sederhana, profesional, ringan, dan tidak membingungkan user awam
+
+---
+
+# 2. KONSEP UTAMA SISTEM
+
+## Alur besar
+
+### User Login
+
+User masuk ke aplikasi sesuai role.
+
+### Fitur Kirim Laporan
+
+Di dashboard ada menu utama:
+
+**Judul menu: Kirim Laporan**
+
+Isi fiturnya:
+
+* download template XLSX resmi
+* koordinator isi laporan kegiatan harian / mingguan dalam 1 file
+* upload ke importer
+* sistem validasi isi file
+* preview hasil import
+* simpan ke database
+* data langsung terbaca oleh semua modul laporan dan analytic
+
+---
+
+# 3. ROLE USER
+
+## 3.1 Super Admin
+
+Hak akses tertinggi.
+
+Bisa:
+
+* kelola master setting sistem
+* kelola user dan role
+* kelola master anggota
+* kelola master wilayah/cabang
+* kelola master produk
+* kelola master status order
+* kelola parameter gaji dan THR
+* approve / reject import laporan
+* lihat semua laporan dan analytics
+* generate laporan formal yayasan
+
+## 3.2 Admin Yayasan
+
+Bisa:
+
+* kelola data operasional yayasan
+* kelola anggota
+* lihat semua laporan
+* generate laporan bulanan
+* lihat performa dan pendapatan anggota
+* ekspor laporan
+
+## 3.3 Koordinator
+
+Bisa:
+
+* download template XLSX
+* upload laporan kegiatan
+* lihat riwayat import miliknya
+* lihat hasil validasi/import
+* edit draft sebelum approve admin jika sistem diizinkan
+
+## 3.4 Anggota
+
+Bisa:
+
+* lihat performa pribadi
+* lihat pendapatan pribadi
+* lihat histori order / kontribusi kegiatan
+* lihat THR pribadi
+
+## 3.5 Viewer / Pimpinan
+
+Bisa:
+
+* hanya baca dashboard
+* lihat laporan formal
+* lihat summary performa dan penjualan
+
+---
+
+# 4. BENCHMARK UX/UI
+
+## Arah UI
+
+Harus seperti spreadsheet modern:
+
+* clean
+* ringan
+* cepat
+* tabel rapi
+* filter jelas
+* tidak penuh dekorasi
+* cocok untuk user yayasan / kantor
+* tetap ada identitas visual yang profesional
+
+## Gaya visual
+
+Berdasarkan logo yang kamu kirim, warna utamanya sebaiknya:
+
+* **Merah Yayasan** untuk primary action
+* **Hitam / charcoal** untuk text utama
+* **Putih / abu muda** untuk background
+* **Gold lembut** sebagai aksen minor
+
+## Rekomendasi palette
+
+* Primary Red: `#D90B23`
+* Dark Text: `#111111`
+* Soft Gray: `#F5F6F8`
+* Border Gray: `#D9DDE3`
+* Accent Gold: `#D8A81E`
+
+## Karakter UI
+
+* minimalis
+* modern formal
+* tidak membosankan
+* ada nuansa dashboard profesional
+* fokus ke tabel, summary card, dan filter
+* sticky header untuk tabel
+* spreadsheet-like grid
+* import preview mirip excel
+* export & print formal tanpa ribet
+
+---
+
+# 5. ARSITEKTUR TEKNOLOGI
+
+## 5.1 Monorepo
+
+Gunakan monorepo agar maintainable.
+
+### Struktur
+
+```txt
+/apps
+  /web-admin        -> React + Mantine
+  /api              -> Node.js backend
+/packages
+  /ui               -> shared ui components
+  /types            -> shared types
+  /utils            -> shared utilities
+  /config           -> eslint, tsconfig, constants
+  /report-engine    -> generator laporan formal/pdf/xlsx
+  /import-engine    -> parser & validator xlsx
+/infrastructure
+  /docker
+  /nginx
+  /scripts
+```
+
+## 5.2 Frontend
+
+* React
+* TypeScript
+* Mantine UI
+* TanStack Query
+* TanStack Table
+* React Hook Form
+* Zod
+* React Router
+* dayjs
+
+## 5.3 Backend
+
+* Node.js
+* NestJS lebih cocok untuk enterprise dan modular
+* TypeScript
+* Prisma ORM atau Drizzle ORM
+* PostgreSQL
+* Redis untuk cache / queue
+* BullMQ untuk background jobs
+
+## 5.4 Reporting
+
+* Excel export: ExcelJS
+* PDF formal: pdfmake / React PDF / Puppeteer HTML-to-PDF
+* Import XLSX: SheetJS / ExcelJS
+
+## 5.5 Deployment
+
+* Docker
+* Docker Compose
+* Nginx / Caddy reverse proxy
+* CI/CD GitHub Actions
+
+---
+
+# 6. DESAIN DATABASE YANG DIREKOMENDASIKAN
+
+Dari file schema awalmu, struktur sekarang masih campur antara data input, taxonomy, dan keterangan. Supaya sistem sehat, sebaiknya dipecah menjadi tabel inti seperti ini:
+
+---
+
+## 6.1 users
+
+Untuk login aplikasi.
+
+Field:
+
+* id
+* full_name
+* email
+* username
+* password_hash
+* role_id
+* member_id nullable
+* is_active
+* created_at
+* updated_at
+
+---
+
+## 6.2 roles
+
+Field:
+
+* id
+* code
+* name
+
+Contoh:
+
+* super_admin
+* admin_yayasan
+* koordinator
+* anggota
+* viewer
+
+---
+
+## 6.3 members
+
+Master anggota yayasan.
+
+Field:
+
+* id
+* kode_anggota
+* nama_anggota
+* data_anggota
+* jabatan_anggota_id
+* cabang_id
+* no_hp
+* alamat
+* status_aktif
+* joined_at
+* created_at
+* updated_at
+
+Catatan:
+`data_anggota` dari draft awalmu lebih baik dijadikan field identitas tambahan, misalnya nomor anggota / keterangan anggota.
+
+---
+
+## 6.4 member_positions
+
+Master jabatan anggota.
+
+Field:
+
+* id
+* code
+* name
+* description
+
+Contoh:
+
+* kordinator
+* anggota
+
+---
+
+## 6.5 activity_positions
+
+Master jabatan kegiatan.
+
+Field:
+
+* id
+* code
+* name
+* incentive_per_deal
+* is_active
+
+Contoh default:
+
+* konsultan -> 100000
+* surveyor -> 50000
+* pribadi -> 150000
+
+Ini penting karena nominal harus bisa diubah di setting admin.
+
+---
+
+## 6.6 branches
+
+Master cabang / wilayah.
+
+Field:
+
+* id
+* kode_cabang
+* wilayah_kelompok
+* wilayah_kabupaten
+* wilayah_provinsi
+* alamat_cabang
+* is_active
+
+---
+
+## 6.7 products
+
+Master produk yayasan / produk penjualan.
+
+Field:
+
+* id
+* kode_produk
+* nama_produk
+* kategori
+* harga_default
+* point_thr_default
+* is_active
+
+Karena gaji dan THR berbasis order produk deal, maka produk wajib ada.
+
+---
+
+## 6.8 activities
+
+Master kegiatan lapangan / event penyuluhan.
+
+Field:
+
+* id
+* tanggal_kegiatan
+* nama_kegiatan
+* cabang_id
+* koordinator_member_id
+* deskripsi
+* periode_type
+* source_import_id nullable
+* created_by
+* created_at
+* updated_at
+
+`periode_type`:
+
+* harian
+* mingguan
+
+---
+
+## 6.9 activity_members
+
+Relasi anggota yang ikut di kegiatan.
+
+Field:
+
+* id
+* activity_id
+* member_id
+* activity_position_id
+* notes
+
+Ini penting agar 1 kegiatan bisa punya banyak anggota dengan jabatan kegiatan berbeda.
+
+---
+
+## 6.10 orders
+
+Data order hasil kegiatan.
+
+Field:
+
+* id
+* activity_id
+* member_id nullable
+* produk_id
+* qty
+* harga_satuan
+* total_harga
+* golongan_id nullable
+* status_order_id
+* customer_name nullable
+* notes
+* deal_at nullable
+* created_at
+* updated_at
+
+Catatan:
+Kalau satu kegiatan menghasilkan banyak order, semua masuk ke sini.
+
+---
+
+## 6.11 order_statuses
+
+Master status order.
+
+Field:
+
+* id
+* code
+* name
+* sort_order
+* is_final
+* is_deal
+* color_tag
+
+Contoh:
+
+* pending
+* cancel
+* terkirim
+* deal
+
+Lebih aman daripada hardcode.
+
+---
+
+## 6.12 golongan
+
+Master dropdown custom field.
+
+Field:
+
+* id
+* code
+* name
+* description
+* is_active
+
+---
+
+## 6.13 imports
+
+Riwayat upload importer.
+
+Field:
+
+* id
+* file_name
+* uploaded_by
+* uploaded_at
+* status
+* total_rows
+* valid_rows
+* invalid_rows
+* notes
+* storage_path
+
+Status:
+
+* draft
+* validated
+* imported
+* rejected
+* partial_success
+
+---
+
+## 6.14 import_rows
+
+Log detail per row xlsx.
+
+Field:
+
+* id
+* import_id
+* row_number
+* payload_json
+* validation_status
+* validation_message
+* linked_activity_id nullable
+* linked_order_id nullable
+
+Ini sangat penting agar user tahu baris mana yang gagal.
+
+---
+
+## 6.15 payroll_rules
+
+Rule gaji / insentif.
+
+Field:
+
+* id
+* rule_code
+* rule_name
+* activity_position_id nullable
+* amount_type
+* amount_value
+* is_active
+* effective_start
+* effective_end
+
+Contoh:
+
+* konsultan_per_deal = 100000
+* surveyor_per_deal = 50000
+* pribadi_per_deal = 150000
+
+---
+
+## 6.16 thr_rules
+
+Rule THR.
+
+Field:
+
+* id
+* rule_code
+* point_per_qty
+* rupiah_per_point
+* is_active
+* effective_start
+* effective_end
+
+Contoh default:
+
+* setiap qty deal = 1 point
+* 1 point = Rp 1.000
+
+Atau bisa langsung:
+
+* total qty deal x nominal thr per qty
+
+---
+
+## 6.17 payroll_periods
+
+Periode penggajian.
+
+Field:
+
+* id
+* period_name
+* month
+* year
+* start_date
+* end_date
+* status
+* generated_at
+* generated_by
+
+---
+
+## 6.18 member_payrolls
+
+Rekap gaji per anggota per periode.
+
+Field:
+
+* id
+* payroll_period_id
+* member_id
+* total_deal_count
+* total_qty_deal
+* total_sales_amount
+* incentive_amount
+* thr_amount
+* other_bonus
+* deduction_amount
+* final_amount
+* generated_at
+
+---
+
+## 6.19 foundation_settings
+
+Setting identitas yayasan.
+
+Field:
+
+* id
+* foundation_name
+* office_name
+* office_address
+* city
+* province
+* phone
+* email
+* report_header_logo
+* report_signature_name
+* report_signature_title
+* report_footer_notes
+
+Isi awal:
+**KANTOR: JL KYAI PANCA, PUCANG, BAWANG, BANJARNEGARA**
+
+---
+
+# 7. HUBUNGAN DATA UTAMA
+
+## Relasi inti
+
+* 1 cabang punya banyak anggota
+* 1 kegiatan punya 1 koordinator
+* 1 kegiatan punya banyak anggota lewat `activity_members`
+* 1 kegiatan punya banyak order
+* 1 order terkait 1 produk
+* 1 order punya 1 status
+* 1 anggota bisa ikut banyak kegiatan
+* 1 anggota bisa punya banyak rekap payroll
+* 1 import bisa menghasilkan banyak activities dan orders
+
+---
+
+# 8. TEMPLATE XLSX IMPORTER
+
+## Tujuan
+
+Koordinator cukup isi 1 file XLSX lalu upload.
+
+## Sheet yang disarankan
+
+### Sheet 1: PETUNJUK
+
+Berisi:
+
+* cara isi template
+* format tanggal
+* aturan status
+* kolom wajib
+* contoh pengisian
+
+### Sheet 2: LAPORAN_KEGIATAN
+
+Kolom minimal:
+
+* tanggal_kegiatan
+* nama_kegiatan
+* wilayah_kelompok
+* wilayah_kabupaten
+* wilayah_provinsi
+* nama_koordinator
+* nama_anggota
+* jabatan_kegiatan
+* nama_produk
+* qty
+* harga_satuan
+* golongan
+* status_order
+* keterangan
+
+Catatan:
+Satu baris = satu order / satu kontribusi anggota pada kegiatan.
+
+Kalau 1 kegiatan melibatkan banyak anggota dan produk, tinggal banyak baris dengan `tanggal + nama_kegiatan` yang sama.
+
+---
+
+# 9. FLOW IMPORT DATA
+
+## Tahap 1 Upload
+
+User upload file XLSX.
+
+## Tahap 2 Validasi
+
+Sistem cek:
+
+* format file
+* nama sheet
+* kolom wajib
+* data kosong
+* nama anggota valid
+* jabatan kegiatan valid
+* produk valid
+* status valid
+* qty angka
+* harga angka
+* tanggal valid
+
+## Tahap 3 Preview
+
+Sistem tampilkan preview:
+
+* total row
+* valid
+* invalid
+* warning duplicate
+* row error detail
+
+## Tahap 4 Import
+
+Jika user konfirmasi:
+
+* buat record `imports`
+* simpan log row
+* insert / update data kegiatan
+* insert orders
+* link anggota dan jabatan kegiatan
+
+## Tahap 5 Hasil
+
+Sistem tampilkan:
+
+* import berhasil
+* berapa row sukses
+* berapa row gagal
+* tombol download hasil validasi
+
+---
+
+# 10. FITUR-FITUR UTAMA APLIKASI
+
+## 10.1 Dashboard
+
+Tampilan awal:
+
+* total penjualan hari ini
+* total penjualan bulan ini
+* total deal bulan ini
+* total anggota aktif
+* top performer
+* jumlah laporan masuk
+* jumlah import gagal / pending review
+
+Ada chart ringan:
+
+* tren penjualan harian
+* distribusi status order
+* performa per jabatan kegiatan
+
+---
+
+## 10.2 Kirim Laporan
+
+Fitur utama sesuai konsepmu.
+
+Isi halaman:
+
+* tombol download template XLSX
+* tombol upload file
+* preview import
+* riwayat upload
+* status import
+* detail error per row
+
+---
+
+## 10.3 Laporan Penjualan
+
+Harus bisa mengkalkulasi penjualan harian dan analytics dari DB.
+
+### Filter wajib
+
+* rentang tanggal
+* bulan
+* tahun
+* anggota
+* koordinator
+* wilayah
+* cabang
+* produk
+* golongan
+* status
+* jabatan_kegiatan
+
+### Output
+
+* total penjualan
+* total qty
+* total deal
+* total pending
+* total cancel
+* conversion ke deal
+* top wilayah
+* top produk
+* top anggota
+* tabel detail order
+
+### Export
+
+* export Excel
+* export PDF
+* print
+
+---
+
+## 10.4 Laporan Format Yayasan
+
+Ini format formal.
+
+### Struktur dokumen
+
+* logo yayasan
+* nama yayasan
+* alamat yayasan
+* judul laporan
+* periode bulan
+* tabel laporan penjualan yayasan
+* ringkasan total
+* area tanda tangan di bagian bawah
+
+### Bagian bawah
+
+Field:
+
+* dibuat oleh
+* diperiksa oleh
+* diketahui oleh
+* nama penandatangan
+* jabatan
+* tanggal cetak
+
+### Format resmi
+
+Harus terlihat:
+
+* rapi
+* formal
+* ada kop
+* cocok diprint A4 portrait/landscape tergantung tabel
+* spacing stabil
+* header dan footer konsisten
+
+---
+
+## 10.5 Monitoring Performa Tiap Anggota
+
+Menampilkan performa anggota berdasarkan jabatan kegiatan.
+
+### Tampilan
+
+* nama anggota
+* cabang
+* total kegiatan diikuti
+* total deal
+* total qty deal
+* total nilai penjualan
+* kontribusi per role:
+
+  * konsultan
+  * surveyor
+  * pribadi
+
+### Filter
+
+* periode
+* cabang
+* anggota
+* jabatan
+* wilayah
+
+### Insight
+
+* ranking performa
+* growth vs periode sebelumnya
+* persentase kontribusi
+
+---
+
+## 10.6 Pendapatan / Gaji Anggota
+
+Dihitung dari performa penjualan.
+
+### Rule awal
+
+* konsultan: per order produk deal x Rp 100.000
+* surveyor: per order produk deal x Rp 50.000
+* pribadi: per order produk deal x Rp 150.000
+
+### Catatan penting
+
+Nominal ini **tidak dihardcode**, tapi diambil dari `payroll_rules`.
+
+### Output
+
+* jumlah order deal
+* rincian per jabatan kegiatan
+* total insentif
+* bonus tambahan jika ada
+* potongan jika ada
+* final pendapatan
+
+---
+
+## 10.7 THR
+
+Rule awal:
+
+* total point order qty x Rp 1.000
+* nominal bisa diatur di setting admin
+
+### Contoh
+
+Jika anggota punya total qty deal = 120
+dan nilai THR per point = Rp 1.000
+
+maka:
+**THR = 120 x 1.000 = Rp 120.000**
+
+### Opsi pengembangan
+
+* THR dihitung per semester
+* THR dihitung per tahun
+* THR bisa diberi minimum masa aktif anggota
+* THR hanya untuk status anggota aktif
+
+---
+
+## 10.8 Master Data
+
+Menu admin:
+
+* master anggota
+* master cabang
+* master wilayah
+* master produk
+* master golongan
+* master status order
+* master jabatan anggota
+* master jabatan kegiatan
+* master payroll rules
+* master THR rules
+* master identitas yayasan
+
+---
+
+## 10.9 Audit Log
+
+Setiap aksi penting dicatat:
+
+* login
+* upload file
+* approve import
+* edit master
+* ubah rule gaji
+* generate laporan
+* export laporan
+
+Ini penting supaya sistem yayasan aman dan bisa ditelusuri.
+
+---
+
+# 11. FORMULA BISNIS
+
+## 11.1 Penjualan
+
+Hanya order dengan status `deal` yang dihitung sebagai penjualan final.
+
+### Formula
+
+`total_penjualan = sum(total_harga untuk status deal)`
+
+---
+
+## 11.2 Total deal anggota
+
+`total_deal_anggota = jumlah order status deal yang terkait anggota`
+
+---
+
+## 11.3 Gaji / insentif anggota
+
+Berdasarkan jabatan kegiatan pada order deal.
+
+### Formula umum
+
+`insentif = jumlah order deal x tarif jabatan kegiatan`
+
+Contoh:
+
+* konsultan 8 order deal x 100.000 = 800.000
+* surveyor 6 order deal x 50.000 = 300.000
+* pribadi 3 order deal x 150.000 = 450.000
+
+Total = 1.550.000
+
+---
+
+## 11.4 THR
+
+### Formula umum
+
+`THR = total_qty_deal x nominal_thr_per_qty`
+
+Contoh:
+100 qty x 1.000 = 100.000
+
+---
+
+# 12. HALAMAN-HALAMAN FRONTEND
+
+## Public / Auth
+
+* Login
+* Lupa password
+* Reset password
+
+## App
+
+* Dashboard
+* Kirim Laporan
+* Riwayat Import
+* Laporan Penjualan
+* Laporan Formal Yayasan
+* Monitoring Performa Anggota
+* Pendapatan / Gaji
+* THR
+* Master Data
+* Pengaturan Yayasan
+* User Management
+* Audit Log
+
+---
+
+# 13. KONSEP UI DETAIL
+
+## Sidebar
+
+Sederhana, ikon jelas, tidak ramai.
+
+## Topbar
+
+* nama user
+* periode aktif
+* quick search
+* notif import error
+
+## Tabel
+
+Harus seperti spreadsheet:
+
+* sticky header
+* sortable
+* resizable column
+* filter per kolom
+* export cepat
+* pagination stabil
+* row highlight
+* total footer
+
+## Form
+
+* simple
+* label jelas
+* ada helper text
+* validasi langsung
+* tidak terlalu banyak warna
+
+## Empty state
+
+Harus ramah:
+
+* “Belum ada laporan pada periode ini”
+* “Upload template XLSX untuk mulai input data”
+
+---
+
+# 14. STRATEGI REPORTING
+
+## Jenis laporan
+
+* laporan penjualan harian
+* laporan penjualan bulanan
+* laporan per anggota
+* laporan per wilayah
+* laporan per cabang
+* laporan performa anggota
+* laporan pendapatan anggota
+* laporan THR anggota
+* laporan formal yayasan
+
+## Output format
+
+* on-screen table
+* export XLSX
+* export PDF formal
+* print ready
+
+---
+
+# 15. STRATEGI BACKEND MODULE
+
+## Module list NestJS
+
+* auth
+* users
+* roles
+* members
+* branches
+* products
+* activities
+* orders
+* imports
+* reports
+* payroll
+* thr
+* settings
+* audit-log
+* dashboard
+
+---
+
+# 16. API MODULE HIGH LEVEL
+
+## Auth
+
+* POST /auth/login
+* POST /auth/logout
+* GET /auth/me
+
+## Imports
+
+* GET /imports/template
+* POST /imports/upload
+* POST /imports/:id/validate
+* POST /imports/:id/commit
+* GET /imports
+* GET /imports/:id
+
+## Reports
+
+* GET /reports/sales
+* GET /reports/sales/export-xlsx
+* GET /reports/sales/export-pdf
+* GET /reports/foundation-monthly
+* GET /reports/performance-members
+* GET /reports/payroll
+* GET /reports/thr
+
+## Masters
+
+* CRUD /members
+* CRUD /branches
+* CRUD /products
+* CRUD /golongan
+* CRUD /order-statuses
+* CRUD /activity-positions
+* CRUD /payroll-rules
+* CRUD /thr-rules
+* CRUD /settings/foundation
+
+---
+
+# 17. VALIDASI DAN KEAMANAN
+
+## Wajib ada
+
+* RBAC per role
+* password hash bcrypt/argon2
+* JWT auth
+* rate limit login
+* audit log
+* server-side validation
+* file upload validation
+* antivirus/basic mime validation untuk file upload
+* max upload size
+* duplicate import detection
+
+## Import safety
+
+Sistem harus bisa deteksi:
+
+* file sama diupload 2 kali
+* row duplicate
+* anggota tidak ditemukan
+* produk tidak valid
+* status tidak valid
+* qty negatif
+* harga tidak wajar
+
+---
+
+# 18. PERFORMA DAN STABILITAS
+
+## Prinsip
+
+* ringan
+* query cepat
+* data besar tetap nyaman
+
+## Teknis
+
+* index DB pada tanggal, anggota, cabang, status, produk
+* materialized summary bila nanti data besar
+* cache dashboard
+* background job untuk generate report besar
+* import dijalankan async jika file besar
+
+---
+
+# 19. ROADMAP PENGEMBANGAN
+
+## Phase 1 — Fondasi
+
+* auth
+* role
+* master anggota
+* master cabang
+* master produk
+* master status order
+* foundation settings
+* dashboard dasar
+
+## Phase 2 — Importer XLSX
+
+* download template
+* upload xlsx
+* parser
+* validator
+* preview import
+* commit to DB
+* riwayat import
+
+## Phase 3 — Reporting
+
+* laporan penjualan
+* filter lengkap
+* export xlsx/pdf
+* laporan formal yayasan
+
+## Phase 4 — Monitoring & Payroll
+
+* performa anggota
+* hitung insentif
+* hitung THR
+* rekap payroll per bulan
+
+## Phase 5 — Penyempurnaan
+
+* audit log lengkap
+* optimasi query
+* summary dashboard lanjutan
+* print style sangat rapi
+* mobile responsive
+
+---
+
+# 20. REKOMENDASI FITUR TAMBAHAN YANG PENTING
+
+Beberapa detail penting yang sebaiknya ditambahkan:
+
+## Nomor dokumen
+
+Setiap import / laporan punya nomor dokumen otomatis.
+
+Contoh:
+
+* IMP-202604-0001
+* RPT-YBM-202604-0001
+
+## Approval import
+
+Ada opsi:
+
+* draft
+* menunggu review
+* approved
+* rejected
+
+## Kunci periode
+
+Laporan bulan yang sudah final bisa dikunci agar tidak berubah.
+
+## Catatan revisi
+
+Kalau ada koreksi data, tersimpan histori revisinya.
+
+## Signature setting
+
+Nama penandatangan bisa diatur dari admin.
+
+## Multi-template report
+
+Agar nanti bisa ada:
+
+* format internal
+* format pimpinan
+* format yayasan resmi
+
+---
+
+# 21. RINGKASAN DESAIN BISNIS YANG PALING PAS
+
+## Inti proses
+
+1. Koordinator download template
+2. Koordinator isi laporan kegiatan + order
+3. Upload ke sistem
+4. Sistem validasi
+5. Admin approve
+6. Data masuk laporan penjualan
+7. Data otomatis masuk monitoring performa
+8. Data otomatis masuk perhitungan gaji
+9. Data otomatis masuk THR
+10. Admin generate laporan formal yayasan per bulan
+
+---
+
+# 22. KESIMPULAN ARSITEKTUR
+
+Struktur awal dari tabel yang kamu punya **sudah cukup bagus sebagai ide dasar**, tapi untuk implementasi aplikasi nyata harus dipecah menjadi:
+
+* master data
+* transaksi kegiatan
+* transaksi order
+* relasi anggota kegiatan
+* import log
+* report engine
+* payroll engine
+* THR engine
+* settings yayasan
+
+Dengan pendekatan ini, sistem jadi:
+
+* lebih rapi
+* mudah dikembangkan
+* aman untuk laporan formal
+* stabil untuk analytic
+* gampang dipakai user awam
+* UI bisa tetap seperti spreadsheet profesional
+
+---
+
+Kalau kamu mau, langkah berikutnya aku bisa lanjutkan jadi **MASTERPLAN V2 yang lebih teknis** berisi:
+
+**ERD tabel lengkap + struktur field final + flow importer + daftar menu sidebar + daftar API endpoint detail + formula SQL/reporting**.
