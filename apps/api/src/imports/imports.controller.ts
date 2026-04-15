@@ -5,6 +5,7 @@ import { ImportsService } from './imports.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
+import { Public } from '../auth/public.decorator';
 import { Response } from 'express';
 import * as ExcelJS from 'exceljs';
 
@@ -44,6 +45,7 @@ export class ImportsController {
     return this.importsService.findAll();
   }
   @Get('template/download')
+  @Public()
   @ApiOperation({ summary: 'Download import template' })
   async downloadTemplate(@Res() res: Response) {
     const workbook = new ExcelJS.Workbook();

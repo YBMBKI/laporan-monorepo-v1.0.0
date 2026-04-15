@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ThrService } from './thr.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -29,18 +29,23 @@ export class ThrController {
   @ApiOperation({ summary: 'Calculate member THR for date range' })
   calculateMemberThr(
     @Param('memberId') memberId: string,
-    @Body() body: { startDate: string; endDate: string; pointPerQty?: number; rupiahPerPoint?: number },
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('pointPerQty') pointPerQty?: string,
+    @Query('rupiahPerPoint') rupiahPerPoint?: string,
   ) {
+    const s = startDate ? new Date(startDate) : undefined;
+    const e = endDate ? new Date(endDate) : undefined;
     return this.thrService.calculateMemberThr(
       memberId,
-      new Date(body.startDate),
-      new Date(body.endDate),
-      body.pointPerQty,
-      body.rupiahPerPoint,
+      s as Date,
+      e as Date,
+      pointPerQty ? Number(pointPerQty) : undefined,
+      rupiahPerPoint ? Number(rupiahPerPoint) : undefined,
     );
   }
 
-  @Get('calculate-all')
+  @Post('calculate-all')
   @ApiOperation({ summary: 'Calculate THR for all members' })
   calculateAllMemberThr(
     @Body() body: { startDate: string; endDate: string; pointPerQty?: number; rupiahPerPoint?: number },

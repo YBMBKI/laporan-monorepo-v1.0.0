@@ -57,7 +57,7 @@ export class PayrollController {
     return this.payrollService.getMemberPayrolls(memberId);
   }
 
-  @Get('calculate/:memberId')
+  @Post('calculate/:memberId')
   @ApiOperation({ summary: 'Calculate member payroll for date range' })
   calculateMemberPayroll(
     @Param('memberId') memberId: string,
